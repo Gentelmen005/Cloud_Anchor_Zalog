@@ -1,23 +1,3 @@
-//-----------------------------------------------------------------------
-// <copyright file="ResolveMenuManager.cs" company="Google LLC">
-//
-// Copyright 2020 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-//
-// </copyright>
-//-----------------------------------------------------------------------
-
 namespace Google.XR.ARCoreExtensions.Samples.PersistentCloudAnchors
 {
     using System;
@@ -26,51 +6,35 @@ namespace Google.XR.ARCoreExtensions.Samples.PersistentCloudAnchors
     using UnityEngine;
     using UnityEngine.UI;
 
-    /// <summary>
     /// A manager component that helps to populate and handle the options of resolving anchors.
-    /// </summary>
     public class ResolveMenuManager : MonoBehaviour
-    {
-        /// <summary>
+    {    
         /// The main controller for Persistent Cloud Anchors sample.
-        /// </summary>
         public PersistentCloudAnchorsController Controller;
-
-        /// <summary>
+   
         /// A multiselection dropdown component that contains all available resolving options.
-        /// </summary>
         public MultiselectionDropdown Multiselection;
-
-        /// <summary>
+    
         /// An input field for manually typing Cloud Anchor Id(s).
-        /// </summary>
         public InputField InputField;
-
-        /// <summary>
+   
         /// The warning text that appears when invalid characters are filled in.
-        /// </summary>
         public GameObject InvalidInputWarning;
-
-        /// <summary>
+    
         /// The resolve button which leads to AR view screen.
-        /// </summary>
         public Button ResolveButton;
-
-        /// <summary>
+   
         /// Cached Cloud Anchor history data used to fetch the Cloud Anchor Id using
         /// the index given by multi-selection dropdown.
-        /// </summary>
         private CloudAnchorHistoryCollection _history = new CloudAnchorHistoryCollection();
-
-        /// <summary>
+   
         /// Cached active color for interactable buttons.
-        /// </summary>
         private Color _activeColor;
 
-        /// <summary>
+        public ARViewManager arViewManager;
+
+
         /// Callback handling the validation of the input field.
-        /// </summary>
-        /// <param name="inputString">Current value of the input field.</param>
         public void OnInputFieldValueChanged(string inputString)
         {
             // Input should only contain:
@@ -81,39 +45,52 @@ namespace Google.XR.ARCoreExtensions.Samples.PersistentCloudAnchors
             InvalidInputWarning.SetActive(!regex.IsMatch(inputString));
         }
 
-        /// <summary>
+
+        //public void OnAnchorCreated(CloudAnchor anchor)
+        //{
+        //    // Сохраняй имя и ID якоря в внешнем хранилище данных
+        //    SaveAnchorToDatabase(anchor.Name, anchor.Id);
+        //}
+
         /// Callback handling the end edit event of the input field.
-        /// </summary>
-        /// <param name="inputString">The value of the input field.</param>
         public void OnInputFieldEndEdit(string inputString)
         {
-            if (InvalidInputWarning.activeSelf)
-            {
-                return;
-            }
+            //if (InvalidInputWarning.activeSelf)
+            //{
+            //    return;
+            //}
 
             OnResolvingSelectionChanged();
         }
 
-        /// <summary>
         /// Callback handling the selection values changed in multiselection dropdown and
         /// input field.
-        /// </summary>
         public void OnResolvingSelectionChanged()
         {
             Controller.ResolvingSet.Clear();
 
-            // Add Cloud Anchor Ids from multiselection dropdown.
+            // Добавь идентификаторы облачных якорей из выпадающего списка.
             List<int> selectedIndex = Multiselection.SelectedValues;
             if (selectedIndex.Count > 0)
             {
                 foreach (int index in selectedIndex)
                 {
-                    Controller.ResolvingSet.Add(_history.Collection[index].Id);
+                    string anchorId = _history.Collection[index].Id;
+                    Controller.ResolvingSet.Add(anchorId);
+
+                    if (selectedIndex.Count == 1)
+                    {
+                        string anchorName = _history.Collection[selectedIndex[0]].Name;
+                        if (arViewManager.anchorNameToId.ContainsKey(anchorName))
+                        {
+                            anchorId = arViewManager.anchorNameToId[anchorName];
+                            InputField.text = anchorId;
+                        }
+                    }
                 }
             }
 
-            // Add Cloud Anchor Ids from input field.
+            // Добавь идентификаторы облачных якорей из поля ввода.
             if (!InvalidInputWarning.activeSelf && InputField.text.Length > 0)
             {
                 string[] inputIds = InputField.text.Split(',');
@@ -123,21 +100,17 @@ namespace Google.XR.ARCoreExtensions.Samples.PersistentCloudAnchors
                 }
             }
 
-            // Update resolve button.
+            // Обнови кнопку разрешения.
             SetButtonActive(ResolveButton, Controller.ResolvingSet.Count > 0);
         }
 
-        /// <summary>
         /// The Unity Awake() method.
-        /// </summary>
         public void Awake()
         {
             _activeColor = ResolveButton.GetComponent<Image>().color;
         }
-
-        /// <summary>
+   
         /// The Unity OnEnable() method.
-        /// </summary>
         public void OnEnable()
         {
             SetButtonActive(ResolveButton, false);
@@ -156,9 +129,7 @@ namespace Google.XR.ARCoreExtensions.Samples.PersistentCloudAnchors
             Multiselection.Options = options;
         }
 
-        /// <summary>
         /// The Unity OnDisable() method.
-        /// </summary>
         public void OnDisable()
         {
             Multiselection.OnValueChanged -= OnResolvingSelectionChanged;
