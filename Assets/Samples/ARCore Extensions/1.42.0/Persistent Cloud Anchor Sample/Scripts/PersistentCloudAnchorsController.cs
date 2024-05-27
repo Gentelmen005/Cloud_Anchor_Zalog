@@ -8,25 +8,19 @@ namespace Google.XR.ARCoreExtensions.Samples.PersistentCloudAnchors
     using UnityEngine;
     using UnityEngine.XR.ARFoundation;
 
-     
     /// Controller for Persistent Cloud Anchors sample.
     public class PersistentCloudAnchorsController : MonoBehaviour
     {
         [Header("AR Foundation")]
-
 #if ARCORE_USE_ARF_5 // use ARF 5
- 
         /// The active XROrigin used in the example.
         public XROrigin Origin;
 #else // use ARF 4
- 
         /// The active ARSessionOrigin used in the example.
         public ARSessionOrigin SessionOrigin;
 #endif
 
- 
         /// The ARSession used in the example.
- 
         public ARSession SessionCore;
 
         /// The ARCoreExtensions used in the example.
@@ -181,7 +175,6 @@ namespace Google.XR.ARCoreExtensions.Samples.PersistentCloudAnchors
             return new CloudAnchorHistoryCollection();
         }
 
-         
         /// Save the persistent Cloud Anchors history to local storage,
         /// also remove the oldest data if current storage has met maximal capacity.>
         public void SaveCloudAnchorHistory(CloudAnchorHistory data)

@@ -15,9 +15,14 @@ namespace Google.XR.ARCoreExtensions.Samples.PersistentCloudAnchors
         /// The main controller for Persistent Cloud Anchors sample.
         public PersistentCloudAnchorsController Controller;
 
-        /// The 3D object that represents a Cloud Anchor.
-        public GameObject CloudAnchorPrefab;
 
+
+        /// The 3D object that represents a Cloud Anchor.
+        [SerializeField] public GameObject[] CloudAnchorPrefab;
+
+        public int _spawnedObjectType = -1;
+        public GameObject UI_objects;
+        public GameObject SizeController;
         /// The game object that includes <see cref="MapQualityIndicator"/> to visualize
         /// map quality result.
         public GameObject MapQualityIndicatorPrefab;
@@ -39,10 +44,10 @@ namespace Google.XR.ARCoreExtensions.Samples.PersistentCloudAnchors
         public Text InstructionText;
 
         /// Display the tracking helper text when the session in not tracking.
-        public Text TrackingHelperText;
+        //public Text TrackingHelperText;
 
         /// The debug text in bottom snack bar.
-        public Text DebugText;
+        //public Text DebugText;
 
         /// The button to save the typed name.
         public Button SaveButton;
@@ -128,6 +133,15 @@ namespace Google.XR.ARCoreExtensions.Samples.PersistentCloudAnchors
 
         public Dictionary<string, string> anchorNameToId = new Dictionary<string, string>();
 
+        public void SetSpawnedObjectType(int spawnedObjectType)
+        {
+            _spawnedObjectType = spawnedObjectType;
+            UI_objects.SetActive(false);
+            //SizeController.SetActive(true);
+            //InstructionBar.SetActive(true);
+
+        }
+
         /// Get the camera pose for the current frame.
         /// <returns>The camera pose of the current frame.</returns>
         public Pose GetCameraPose()
@@ -160,16 +174,16 @@ namespace Google.XR.ARCoreExtensions.Samples.PersistentCloudAnchors
             _hostedCloudAnchor.Name = NameField.text;
             Controller.SaveCloudAnchorHistory(_hostedCloudAnchor);
 
-            DebugText.text = string.Format("Сохраненный облачный якорь:\n{0}.", _hostedCloudAnchor.Name);
+            //DebugText.text = string.Format("Сохраненный облачный якорь:\n{0}.", _hostedCloudAnchor.Name);
             ShareButton.gameObject.SetActive(true);
             NamePanel.SetActive(false);
         }
-   
+
         /// Callback handling "Share" button click event.
         public void OnShareButtonClicked()
         {
             GUIUtility.systemCopyBuffer = _hostedCloudAnchor.Id;
-            DebugText.text = "Идентификатор скопированного облака: " + _hostedCloudAnchor.Id;
+            //DebugText.text = "Идентификатор скопированного облака: " + _hostedCloudAnchor.Id;
         }
 
         /// The Unity Awake() method.
@@ -193,6 +207,8 @@ namespace Google.XR.ARCoreExtensions.Samples.PersistentCloudAnchors
             _resolveResults.Clear();
             _resolveCoroutines.Clear();
 
+            UI_objects.SetActive(true);
+
             InstructionBar.SetActive(true);
             NamePanel.SetActive(false);
             InputFieldWarning.SetActive(false);
@@ -207,7 +223,7 @@ namespace Google.XR.ARCoreExtensions.Samples.PersistentCloudAnchors
                 case PersistentCloudAnchorsController.ApplicationMode.Hosting:
                 case PersistentCloudAnchorsController.ApplicationMode.Resolving:
                     InstructionText.text = "Обнаружение плоской поверхности...";
-                    DebugText.text = "ARCore готовится к " + Controller.Mode;
+                    //DebugText.text = "ARCore готовится к " + Controller.Mode;
                     break;
             }
         }
@@ -266,6 +282,7 @@ namespace Google.XR.ARCoreExtensions.Samples.PersistentCloudAnchors
 
             _resolveResults.Clear();
             UpdatePlaneVisibility(false);
+            //_spawnedObjectType = -1;
         }
         
         /// The Unity Update() method.
@@ -291,12 +308,13 @@ namespace Google.XR.ARCoreExtensions.Samples.PersistentCloudAnchors
 
             if (_timeSinceStart >= _startPrepareTime)
             {
-                DisplayTrackingHelperMessage();
+                //DisplayTrackingHelperMessage();
             }
 
             if (Controller.Mode == PersistentCloudAnchorsController.ApplicationMode.Resolving)
             {
                 ResolvingCloudAnchors();
+                UI_objects.SetActive(false);
             }
             else if (Controller.Mode == PersistentCloudAnchorsController.ApplicationMode.Hosting)
             {
@@ -358,7 +376,7 @@ namespace Google.XR.ARCoreExtensions.Samples.PersistentCloudAnchors
 
             if (_anchor != null)
             {
-                Instantiate(CloudAnchorPrefab, _anchor.transform);
+                Instantiate(CloudAnchorPrefab[_spawnedObjectType], _anchor.transform);
 
                 // Attach map quality indicator to this anchor.
                 var indicatorGO =
@@ -368,7 +386,7 @@ namespace Google.XR.ARCoreExtensions.Samples.PersistentCloudAnchors
 
                 InstructionText.text = " Чтобы сохранить это место, обойдите объект вокруг, чтобы " +
                     "снимайте его с разных ракурсов";
-                DebugText.text = "Ожидание достаточной четкости отображения...";
+                //DebugText.text = "Ожидание достаточной четкости отображения...";
 
                 // Hide plane generator so users can focus on the object they placed.
                 UpdatePlaneVisibility(false);
@@ -395,7 +413,7 @@ namespace Google.XR.ARCoreExtensions.Samples.PersistentCloudAnchors
             // Ideally, the pose should represent users’ expected perspectives.
             FeatureMapQuality quality =
                 Controller.AnchorManager.EstimateFeatureMapQualityForHosting(GetCameraPose());
-            DebugText.text = "Текущее качество картографии: " + quality;
+            //DebugText.text = "Текущее качество картографии: " + quality;
             qualityState = (int)quality;
             _qualityIndicator.UpdateQualityState(qualityState);
 
@@ -426,11 +444,11 @@ namespace Google.XR.ARCoreExtensions.Samples.PersistentCloudAnchors
 
             // Start hosting:
             InstructionText.text = "Обработка...";
-            DebugText.text = "Качество отображения достигло достаточного порога, " +
-                "создание облачного якоря.";
-            DebugText.text = string.Format(
-                "FeatureMapQuality has reached {0}, triggering CreateCloudAnchor.",
-                Controller.AnchorManager.EstimateFeatureMapQualityForHosting(GetCameraPose()));
+            //DebugText.text = "Качество отображения достигло достаточного порога, " +
+            //    "создание облачного якоря.";
+            //DebugText.text = string.Format(
+            //    "FeatureMapQuality has reached {0}, triggering CreateCloudAnchor.",
+            //    Controller.AnchorManager.EstimateFeatureMapQualityForHosting(GetCameraPose()));
 
             // Creating a Cloud Anchor with lifetime = 1 day.
             // This is configurable up to 365 days when keyless authentication is used.
@@ -522,7 +540,7 @@ namespace Google.XR.ARCoreExtensions.Samples.PersistentCloudAnchors
             if (result.CloudAnchorState == CloudAnchorState.Success)
             {
                 OnAnchorResolvedFinished(true, cloudId);
-                Instantiate(CloudAnchorPrefab, result.Anchor.transform);
+                Instantiate(CloudAnchorPrefab[_spawnedObjectType], result.Anchor.transform);
             }
             else
             {
@@ -536,8 +554,8 @@ namespace Google.XR.ARCoreExtensions.Samples.PersistentCloudAnchors
             {
                 InstructionText.text = "Финиш!";
                 Invoke("DoHideInstructionBar", 1.5f);
-                DebugText.text =
-                    string.Format("Succeed to host the Cloud Anchor: {0}.", response);
+                //DebugText.text =
+                //    string.Format("Succeed to host the Cloud Anchor: {0}.", response);
 
                 // Display name panel and hide instruction bar.
                 NameField.text = _hostedCloudAnchor.Name;
@@ -547,8 +565,8 @@ namespace Google.XR.ARCoreExtensions.Samples.PersistentCloudAnchors
             else
             {
                 InstructionText.text = "Сбой в работе хоста.";
-                DebugText.text = "Не удалось разместить облачный якорь" + (response == null ? "." :
-                    "с ошибкой " + response + ".");
+                //DebugText.text = "Не удалось разместить облачный якорь" + (response == null ? "." :
+                //    "с ошибкой " + response + ".");
             }
         }
 
@@ -557,15 +575,15 @@ namespace Google.XR.ARCoreExtensions.Samples.PersistentCloudAnchors
             if (success)
             {
                 InstructionText.text = "Успешно!!";
-                DebugText.text =
-                    string.Format("Успех в решении проблемы облачного якоря: {0}.", cloudId);
+                //DebugText.text =
+                //    string.Format("Успех в решении проблемы облачного якоря: {0}.", cloudId);
                 //OnAnchorCreated(response);
             }
             else
             {
                 InstructionText.text = "Решить проблему не удалось.";
-                DebugText.text = "Не удалось разрешить облачный якорь: " + cloudId +
-                    (response == null ? "." : "с ошибкой " + response + ".");
+                //DebugText.text = "Не удалось разрешить облачный якорь: " + cloudId +
+                //    (response == null ? "." : "с ошибкой " + response + ".");
             }
         }
 
@@ -578,14 +596,14 @@ namespace Google.XR.ARCoreExtensions.Samples.PersistentCloudAnchors
                 case PersistentCloudAnchorsController.ApplicationMode.Hosting:
                     // Initial instruction for hosting flow:
                     InstructionText.text = "Нажмите, чтобы создать объект.";
-                    DebugText.text = "Коснитесь вертикальной или горизонтальной плоскости...";
+                    //DebugText.text = "Коснитесь вертикальной или горизонтальной плоскости...";
                     return;
                 case PersistentCloudAnchorsController.ApplicationMode.Resolving:
                     // Initial instruction for resolving flow:
                     InstructionText.text =
                         "Посмотрите на место, где вы ожидаете увидеть появление объекта..";
-                    DebugText.text = string.Format("Attempting to resolve {0} anchors...",
-                        Controller.ResolvingSet.Count);
+                    //DebugText.text = string.Format("Attempting to resolve {0} anchors...",
+                    //    Controller.ResolvingSet.Count);
                     return;
                 default:
                     return;
@@ -627,50 +645,50 @@ namespace Google.XR.ARCoreExtensions.Samples.PersistentCloudAnchors
             }
         }
 
-        private void DisplayTrackingHelperMessage()
-        {
-            if (_isReturning || ARSession.notTrackingReason == NotTrackingReason.None)
-            {
-                TrackingHelperText.gameObject.SetActive(false);
-            }
-            else
-            {
-                TrackingHelperText.gameObject.SetActive(true);
-                switch (ARSession.notTrackingReason)
-                {
-                    case NotTrackingReason.Initializing:
-                        TrackingHelperText.text = _initializingMessage;
-                        return;
-                    case NotTrackingReason.Relocalizing:
-                        TrackingHelperText.text = _relocalizingMessage;
-                        return;
-                    case NotTrackingReason.InsufficientLight:
-                        if (_versionInfo.GetStatic<int>("SDK_INT") < _androidSSDKVesion)
-                        {
-                            TrackingHelperText.text = _insufficientLightMessage;
-                        }
-                        else
-                        {
-                            TrackingHelperText.text = _insufficientLightMessageAndroidS;
-                        }
+        //private void DisplayTrackingHelperMessage()
+        //{
+        //    if (_isReturning || ARSession.notTrackingReason == NotTrackingReason.None)
+        //    {
+        //        TrackingHelperText.gameObject.SetActive(false);
+        //    }
+        //    else
+        //    {
+        //        TrackingHelperText.gameObject.SetActive(true);
+        //        switch (ARSession.notTrackingReason)
+        //        {
+        //            case NotTrackingReason.Initializing:
+        //                TrackingHelperText.text = _initializingMessage;
+        //                return;
+        //            case NotTrackingReason.Relocalizing:
+        //                TrackingHelperText.text = _relocalizingMessage;
+        //                return;
+        //            case NotTrackingReason.InsufficientLight:
+        //                if (_versionInfo.GetStatic<int>("SDK_INT") < _androidSSDKVesion)
+        //                {
+        //                    TrackingHelperText.text = _insufficientLightMessage;
+        //                }
+        //                else
+        //                {
+        //                    TrackingHelperText.text = _insufficientLightMessageAndroidS;
+        //                }
 
-                        return;
-                    case NotTrackingReason.InsufficientFeatures:
-                        TrackingHelperText.text = _insufficientFeatureMessage;
-                        return;
-                    case NotTrackingReason.ExcessiveMotion:
-                        TrackingHelperText.text = _excessiveMotionMessage;
-                        return;
-                    case NotTrackingReason.Unsupported:
-                        TrackingHelperText.text = _unsupportedMessage;
-                        return;
-                    default:
-                        TrackingHelperText.text =
-                            string.Format("Not tracking reason: {0}", ARSession.notTrackingReason);
-                        return;
-                }
-            }
-        }
+        //                return;
+        //            case NotTrackingReason.InsufficientFeatures:
+        //                TrackingHelperText.text = _insufficientFeatureMessage;
+        //                return;
+        //            case NotTrackingReason.ExcessiveMotion:
+        //                TrackingHelperText.text = _excessiveMotionMessage;
+        //                return;
+        //            case NotTrackingReason.Unsupported:
+        //                TrackingHelperText.text = _unsupportedMessage;
+        //                return;
+        //            default:
+        //                TrackingHelperText.text =
+        //                    string.Format("Not tracking reason: {0}", ARSession.notTrackingReason);
+        //                return;
+        //        }
+        //    }
+        //}
 
         private void ReturnToHomePage(string reason)
         {
@@ -681,7 +699,7 @@ namespace Google.XR.ARCoreExtensions.Samples.PersistentCloudAnchors
             }
 
             _isReturning = true;
-            DebugText.text = reason;
+            //DebugText.text = reason;
             Invoke("DoReturnToHomePage", 3.0f);
         }
 
